@@ -1,4 +1,5 @@
 #include <eosio.token/eosio.token.hpp>
+#include <eosio/transaction.hpp>
 
 namespace eosio {
 
@@ -79,7 +80,17 @@ void token::transfer( const name&    from,
                       const asset&   quantity,
                       const string&  memo )
 {
-    check( from != to, "cannot transfer to self" );
+    
+    /* Suspend token transfer during planned snapshot exporting */				 
+	auto snapshotStart = 1585573200; // Monday, March 30, 2020 1:00:00 PM
+	auto snapshotEnd   = 1585594800; // Monday, March 30, 2020 7:00:00 PM
+
+	auto now = current_time_point().sec_since_epoch();
+	check ( now < snapshotStart || now > snapshotEnd, "Transfers are suspended due snapshot exporting. March 30, 2020 1:00:00 PM GMT - 7:00:00 PM GMT");
+	/* End token transfer suspend */
+	
+	
+	check( from != to, "cannot transfer to self" );
     require_auth( from );
     check( is_account( to ), "to account does not exist");
     auto sym = quantity.symbol.code();
